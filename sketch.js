@@ -1,101 +1,99 @@
+// Variabile che conterrà i dati caricati dal CSV
 let data;
-
-let minLat, minLon, maxLat, maxLon;
+let minLon, maxLon, minLat, maxLat;
+let outerMargin = 100;
 
 function preload() {
-data = loadTable("assets/data.csv", "csv", "header")
+  data = loadTable("assets/data_volcanoes.csv", "csv", "header");
 }
 
 function setup() {
-  // per creare sketch resposive
   createCanvas(windowWidth, windowHeight);
-
-  // definisco min e max per latitutine 
-  let allLat = data.getColumn("latitude");
-  minLat = min(allLat);
-  maxLat = max(allLat);
-
-  let allLon = data.getColumn("longitude");
-  minLon = min(allLon);
-  maxLon = max (allLon);
-
-  console.log(minLon, maxLon);
-}
-
-function draw() {
   background(10);
 
-  for (let rowNumber = 0; rowNumber < data.getRowCount(); rowNumber++) {
-  console.log(rowNumber);
-  /* leggo i dati della singola riga e, con la funzione, 
-  prendo tutti i dati e mi faccio restituire il valore relativo alla riga */
-  let lon = data.getNum(rowNumber, "longitude");
-  let lat = data.getNum(rowNumber, "latitude");
-  let name = data.getString(rowNumber, "country")
+  let allLon = data.getColumn("Longitude").map(Number);
+  let allLat = data.getColumn("Latitude").map(Number);
 
-  /* converto le coordinate geografiche in coordinate pixel
-  - considero il valore base, il minimo di partenza ed il massimo in rapporto -
-  quando il valore è 90 mi deve restituire 0 e quando è -90 devo trovare l'altezza  */
-  let x = map(lon, minLon, maxLon, 0, width);
-  /* per convenzione il polo nord deve essere in alto ed il sud in basso 
-  quindi, in questo caso, inverto i valori */
-  let y = map(lat, minLat, maxLat, height, 0);
-  // uso la variabile, anzichè direttamente 20 per mantenere il tutto più pulito
-  let radius = 20
-
-
-  /* per definire le scale, associare i dati e aggiungere la sfocatura - visto veloce con il prof, da rivedere!
-
-  // Scala per la longitudine → asse X
-  let allLon = data.getColumn("longitude");
   minLon = min(allLon);
   maxLon = max(allLon);
-
-  // Scala per la latitudine → asse Y
-  let allLat = data.getColumn("latitude");
   minLat = min(allLat);
   maxLat = max(allLat);
 
-  // Scala per il raggio → dipende dal valore numerico
-  let allValues = data.getColumn("value");
-  maxValue = max(allValues);
+  for (let i = 0; i < data.getRowCount(); i++) {
+    let lat = data.getNum(i, "Latitude");
+    let lon = data.getNum(i, "Longitude");
+    let type = data.getString(i, "TypeCategory");
 
-  // Scala per il blur → dipende dal grado di incertezza
-  let allBlur = data.getColumn("uncertainty");
-  minBlur = min(allBlur);
-  maxBlur = max(allBlur);
+    if (isNaN(lat) || isNaN(lon) || !type) continue;
 
-  */
+    let x = map(lon, minLon, maxLon, outerMargin, width - outerMargin);
+    let y = map(lat, minLat, maxLat, height - outerMargin, outerMargin);
 
-/* PER IL MOUSE - se la distanza è maggiore del raggio significa che siamo fuori
-- viceversa, se questa è minore, siamo all'interno */
-
-// con mouseX e mouseY ho già delle coordinate predefinite - calcolo distanza del mouse
-let d = dist(x, y, mouseX, mouseY);
-
-if (d < radius) {
-  fill("red");
+    drawGlyph(x, y, type);
+  }
 }
 
-if (d > radius) {
-  fill("yellow");
+function drawGlyph(x, y, type) {
+  push();
+  translate(x, y);
+  noStroke();
+  fill("orange");
+
+  switch (type) {
+    case "Stratovolcano":
+      stroke("orange");
+      noFill();
+      triangle(-6, 6, 6, 6, 0, -6);
+      break;
+    case "Cone":
+      stroke("orange");
+      noFill();
+      ellipse(0, 0, 14, 8); // ellisse piatta
+      break;
+    case "Caldera":
+      stroke("orange");
+      noFill();
+      ellipse(0, 0, 12, 12); // cerchio vuoto
+      break;
+    case "Crater System":
+      stroke("orange");
+      noFill();
+      beginShape(); // stella irregolare
+      vertex(-6, 0);
+      vertex(-2, -6);
+      vertex(2, -6);
+      vertex(6, 0);
+      vertex(2, 6);
+      vertex(-2, 6);
+      endShape();
+      break;
+    case "Maars / Tuff ring":
+      stroke("orange");
+      noFill();
+      rect(6, 6, 12, 12) 
+      break;
+    case "Shield Volcano":
+      stroke("orange");
+      noFill();
+      beginShape(); // rombo
+      push();
+      rotate(PI / 4); // ruota di 45°
+      rect(-5, -5, 10, 10); // quadrato ruotato
+      pop();
+      break;
+    case "Submarine Volcano":
+      stroke("orange");
+      noFill();
+      triangle(-6, -6, 6, -6, 0, 6); // triangolo invertito
+      break;
+    case "Other / Unknown":
+       stroke("orange");
+       strokeWeight(2);
+       noFill();
+       line(-5, -5, 5, 5); // diagonale \
+       line(-5, 5, 5, -5); // diagonale /
+       break;
+  }
+
+  pop();
 }
-
-// dato che il terzo parametro che l'ellisse si aspetta è il diametro - moltiplico x2
-
-ellipse(x, y, radius * 2);
-
-// per far comparire il nome solo quando passo il mouse
-if(d < radius) {
-  fill("white");
-  text(name, x, y);
-}
-
-
-
-
-}
-
-
-}
-
